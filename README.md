@@ -42,13 +42,13 @@ norm_counts <- FetchData(sobj, vars = "MALAT1")
 
 This can be fed into the _MALAT1_ threshold function which will return the minimum _MALAT1_ value that each cell should contain:
 
-```
+```R
 threshold <- define_malat1_threshold(norm_counts)
 ```
 
 This threshold value can be used to flag or filter cells from your single-cell object. The code below flags cells that don't pass the threshold by using `TRUE` values to represent good cells, and `FALSE` to represent cells that don't pass the filter:
 
-```
+```R
 # Assign MALAT1 expression to a meta data column
 sobj$malat1 <- norm_counts
 
