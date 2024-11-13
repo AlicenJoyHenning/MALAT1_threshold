@@ -1,10 +1,13 @@
-# How to apply a _MALAT1_ threshold for your scRNA-seq object in R
+# _MALAT1_ thresholding in scRNA-seq | R Package 
 
-For a detailed explanation of our findings or citation of this work, please see our preprint on BioRxiv: https://doi.org/10.1101/2024.07.14.603469. Please don't hesitate to ask any questions or let us know if you're getting an unexpected result. We have done our best to make this method robust, but data can be weird and noisy, so we're happy to offer our feedback and look into improvements!
+[![DOI](https://img.shields.io/badge/DOI-10.1101%2F2024.07.14.603469-blue)](https://doi.org/10.1101/2024.07.14.603469)
+[![R-CMD-check](https://github.com/AlicenJoyHenning/MALAT1_threshold/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/AlicenJoyHenning/MALAT1_threshold/actions/workflows/R-CMD-check.yaml)
+
+
+
+For a detailed explanation of our findings or citation of this work, please see our preprint on [BioRxiv](https://doi.org/10.1101/2024.07.14.603469). Please don't hesitate to ask any questions or let us know if you're getting an unexpected result. We have done our best to make this method robust, but data can be weird and noisy, so we're happy to offer our feedback and look into improvements!
 
 Low _MALAT1_ expression is associated with a lack of a nucleus in single-cell RNA-sequencing data. Cells without nuclei are likely either empty droplets filled with ambient RNA, cell fragments, or mature erythrocytes. Our function `define_malat1_threshold` takes a vector of normalized _MALAT1_ expression, and outputs a minimum threshold value that can be used to filter your scRNA-seq object.
-
-We hope to develop a package to allow a user to easily access this function. In the meantime, you can use this the function by either pasting the code directly into your R script, or cloning the GitHub repo, moving the `malat1_function.R` script into your analysis directory, and adding `source("malat1_function.R")` to the top of your script to access the function.
 
 We generally recommend to use this function early in a QC pipeline, after reading in and normalizing your data. After filtering for minimum _MALAT1_ content, you can check for UMI and mitochondrial distribution to see if further filters are necessary, but you may find that this filter is sufficient. We speculate that cells with high _MALAT1_ but also high mitochondrial content may simply be metabolically active. Doublet filtering is unrelated to this pipeline and can be performed afterwards. Similarly, this function does not correct ambient RNA expression, so correction with e.g. SoupX may be performed after filtering for your final cell matrix, if desired.
 
@@ -73,6 +76,3 @@ Some histograms are wonky and can have a lot of little peaks, especially if you 
 Other parameters that can be modified are `bw`, `lwd`, and `breaks`. Increasing or decreasing `bw` to say 0.5 or 0.01 respectively will change the plotting of the density function, with higher values creating a function with fewer inflection points (i.e. a "less curvy" function). Modifying `lwd` changes the thickness of the line on the final plotted histogram, and `breaks` is the number of buckets used in the histogram.
 
 Worst case scenario, if the function doesn't work for some weird, confusing reason, you can always eyeball your _MALAT1_ values to try and figure out if there is something fishy going on with your data. You can manually choose your own threshold by looking at the histogram, or just pick out clusters of concerning cells by projecting _MALAT1_ onto your UMAP.
-
-
-
