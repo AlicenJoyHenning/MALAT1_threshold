@@ -4,26 +4,40 @@
 [![R-CMD-check](https://github.com/AlicenJoyHenning/MALAT1_threshold/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/AlicenJoyHenning/MALAT1_threshold/actions/workflows/R-CMD-check.yaml)
 
 
-For a detailed explanation of our findings or citation of this work, please see our preprint on [BioRxiv](https://doi.org/10.1101/2024.07.14.603469). Please don't hesitate to ask any questions or let us know if you're getting an unexpected result. We have done our best to make this method robust, but data can be weird and noisy, so we're happy to offer our feedback and look into improvements!
+[Overview](#overview) | [Quickstart](#quickstart) | [Example](#example-analysis) | [Troubleshooting](#troubleshooting)
+
+
+<br> <br>
+
+## Overview
 
 Low _MALAT1_ expression is associated with a lack of a nucleus in single-cell RNA-sequencing data. Cells without nuclei are likely either empty droplets filled with ambient RNA, cell fragments, or mature erythrocytes. Our function `define_malat1_threshold` takes a vector of normalized _MALAT1_ expression, and outputs a minimum threshold value that can be used to filter your scRNA-seq object.
 
-Install using the following: 
+We generally recommend to use this function early in a QC pipeline, after reading in and normalizing your data. After filtering for minimum _MALAT1_ content, you can check for UMI and mitochondrial distribution to see if further filters are necessary, but you may find that this filter is sufficient. 
+
+This function can also be used to perform additional filtering on a processed dataset. You should get slightly different results (but a consistent broad pattern) if you run this function on the full dataset at once, or apply it to individual samples or cell types. There is no ground truth to figure out which of these approaches is the best, but we find that the function tends to work best on larger sample sizes (so it would struggle to find patterns in rare cell types or tiny samples). However, batch effect or slight cell-type specific _MALAT1_ expression differences may make it so that you wish to divide your sample in one of these ways before applying the filter. Due to the ubiqutous nature of _MALAT1_ and how sample quality can vary so much by batch, dividing by batch may yield more appropriate-looking results than by cell type. You may wish to test these different approaches on your data to see what works best for you.
+
+For a detailed explanation of our findings or citation of this work, please see our preprint on [BioRxiv](https://doi.org/10.1101/2024.07.14.603469). Please don't hesitate to ask any questions or let us know if you're getting an unexpected result. We have done our best to make this method robust, but data can be weird and noisy, so we're happy to offer our feedback and look into improvements!
+
+> We speculate that cells with high _MALAT1_ but also high mitochondrial content may simply be metabolically active. Doublet filtering is unrelated to > this pipeline and can be performed afterwards. Similarly, this function does not correct ambient RNA expression, so correction with e.g. SoupX may be > performed after filtering for your final cell matrix, if desired.
+
+
+<br>
+
+
+## Quickstart
+
+Install and load the package using ```devtools```, 
 
 ```R
 devtools::install_github("AlicenJoyHenning/MALAT1_threshold")
 library(MALAT1)
 ```
 
+To use this function, isolate the normalized _MALAT1_ expression values from your scRNA-seq object. In a Seurat object (```sobj```), this may look like this, 
 
-We generally recommend to use this function early in a QC pipeline, after reading in and normalizing your data. After filtering for minimum _MALAT1_ content, you can check for UMI and mitochondrial distribution to see if further filters are necessary, but you may find that this filter is sufficient. We speculate that cells with high _MALAT1_ but also high mitochondrial content may simply be metabolically active. Doublet filtering is unrelated to this pipeline and can be performed afterwards. Similarly, this function does not correct ambient RNA expression, so correction with e.g. SoupX may be performed after filtering for your final cell matrix, if desired.
-
-This function can also be used to perform additional filtering on a processed dataset. You should get slightly different results (but a consistent broad pattern) if you run this function on the full dataset at once, or apply it to individual samples or cell types. There is no ground truth to figure out which of these approaches is the best, but we find that the function tends to work best on larger sample sizes (so it would struggle to find patterns in rare cell types or tiny samples). However, batch effect or slight cell-type specific _MALAT1_ expression differences may make it so that you wish to divide your sample in one of these ways before applying the filter. Due to the ubiqutous nature of _MALAT1_ and how sample quality can vary so much by batch, dividing by batch may yield more appropriate-looking results than by cell type. You may wish to test these different approaches on your data to see what works best for you.
-
-To use this function, isolate the normalized _MALAT1_ expression values from your scRNA-seq object. In a Seurat object, this may look like:
-
-```
-norm_counts <- sobj@assays$RNA@data["MALAT1",]
+```R
+norm_counts <- FetchData(sobj, vars = "MALAT1")
 ```
 
 This can be fed into the _MALAT1_ threshold function which will return the minimum _MALAT1_ value that each cell should contain:
@@ -35,26 +49,26 @@ threshold <- define_malat1_threshold(norm_counts)
 This threshold value can be used to flag or filter cells from your single-cell object. The code below flags cells that don't pass the threshold by using `TRUE` values to represent good cells, and `FALSE` to represent cells that don't pass the filter:
 
 ```
-malat1_threshold <- norm_counts > threshold
-sobj$malat1_threshold <- malat1_threshold
-sobj$malat1_threshold <- factor(sobj$malat1_threshold, levels = c("TRUE","FALSE"))
-DimPlot(sobj, group.by = "malat1_threshold")
+# Assign MALAT1 expression to a meta data column
+sobj$malat1 <- norm_counts
+
+# Flag for thresholding check
+sobj$pass <- ifelse(sobj$malat1 > threshold, TRUE, FALSE)
+
+# Only retain cells exceeding the threshold
+sobj <- subset(sobj, filter == TRUE)
+
 ```
 
-From this, you can use the result to remove cells from your object:
 
-```
-good_cells <- WhichCells(sobj, expression = malat1_threshold == TRUE)
-good_sobj <- subset(sobj, cells = good_cells)
-```
+<br>
+
 
 ## Example analysis
 
-We can demonstrate using this function with the Tabula Muris Senis Pancreas dataset which can be downloaded as a Seurat object from [cellxgene](https://cellxgene.cziscience.com/collections/0b9d8a04-bb9d-44da-aa27-705bb65b54eb). The data are also described in this paper:
+We can demonstrate using this function with the Tabula Muris Senis Pancreas dataset which can be downloaded as a Seurat object from [cellxgene](https://cellxgene.cziscience.com/collections/0b9d8a04-bb9d-44da-aa27-705bb65b54eb). The data are also described in this paper. Below is a brief look at the cells in the dataset:
+> The Tabula Muris Consortium. A single-cell transcriptomic atlas characterizes ageing tissues in the mouse. Nature 583, 590–595 (2020). > https://doi.org/10.1038/s41586-020-2496-1
 
-The Tabula Muris Consortium. A single-cell transcriptomic atlas characterizes ageing tissues in the mouse. Nature 583, 590–595 (2020). https://doi.org/10.1038/s41586-020-2496-1
-
-Here is a brief look at the cells in the dataset:
 
 <img width="400" alt="tabula_muris_senis_pancreas_celltypes" src="https://github.com/user-attachments/assets/bc4a6e67-640c-44d3-b699-0d63860d83bc">
 
@@ -74,6 +88,10 @@ Using the code above, we can see which cells passed the filter. Most of the cell
 
 <img width="400" alt="tabula_muris_senis_pancreas_malat1_dimplot" src="https://github.com/user-attachments/assets/64049f75-6b54-44b3-95a1-620e61f6b346">
 
+
+<br>
+
+
 ## Troubleshooting
 
 This analysis relies on the assumption that there is a _MALAT1_ peak above the normalized value of one. If such a peak (i.e. local maximum above one) does not exist, the function may call an error. This is probably a good sign to take a closer look at your data anyway, but you can also lower this value by adjusting the parameter `chosen_min`.
@@ -83,3 +101,9 @@ Some histograms are wonky and can have a lot of little peaks, especially if you 
 Other parameters that can be modified are `bw`, `lwd`, and `breaks`. Increasing or decreasing `bw` to say 0.5 or 0.01 respectively will change the plotting of the density function, with higher values creating a function with fewer inflection points (i.e. a "less curvy" function). Modifying `lwd` changes the thickness of the line on the final plotted histogram, and `breaks` is the number of buckets used in the histogram.
 
 Worst case scenario, if the function doesn't work for some weird, confusing reason, you can always eyeball your _MALAT1_ values to try and figure out if there is something fishy going on with your data. You can manually choose your own threshold by looking at the histogram, or just pick out clusters of concerning cells by projecting _MALAT1_ onto your UMAP.
+
+<br> 
+
+
+---
+
