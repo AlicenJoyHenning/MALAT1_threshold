@@ -4,10 +4,17 @@
 [![R-CMD-check](https://github.com/AlicenJoyHenning/MALAT1_threshold/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/AlicenJoyHenning/MALAT1_threshold/actions/workflows/R-CMD-check.yaml)
 
 
-
 For a detailed explanation of our findings or citation of this work, please see our preprint on [BioRxiv](https://doi.org/10.1101/2024.07.14.603469). Please don't hesitate to ask any questions or let us know if you're getting an unexpected result. We have done our best to make this method robust, but data can be weird and noisy, so we're happy to offer our feedback and look into improvements!
 
 Low _MALAT1_ expression is associated with a lack of a nucleus in single-cell RNA-sequencing data. Cells without nuclei are likely either empty droplets filled with ambient RNA, cell fragments, or mature erythrocytes. Our function `define_malat1_threshold` takes a vector of normalized _MALAT1_ expression, and outputs a minimum threshold value that can be used to filter your scRNA-seq object.
+
+Install using the following: 
+
+```R
+devtools::install_github("AlicenJoyHenning/MALAT1_threshold")
+library(MALAT1)
+```
+
 
 We generally recommend to use this function early in a QC pipeline, after reading in and normalizing your data. After filtering for minimum _MALAT1_ content, you can check for UMI and mitochondrial distribution to see if further filters are necessary, but you may find that this filter is sufficient. We speculate that cells with high _MALAT1_ but also high mitochondrial content may simply be metabolically active. Doublet filtering is unrelated to this pipeline and can be performed afterwards. Similarly, this function does not correct ambient RNA expression, so correction with e.g. SoupX may be performed after filtering for your final cell matrix, if desired.
 
